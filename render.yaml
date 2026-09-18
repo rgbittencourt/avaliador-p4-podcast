@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: avaliador-p4-podcast
+    name: avaliador-podcast
     runtime: docker
     repo: https://github.com/rgbittencourt/avaliador-p4-podcast
     branch: main

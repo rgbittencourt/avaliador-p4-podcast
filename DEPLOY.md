@@ -23,6 +23,9 @@ Depois de hospedado, o provedor fornecerá uma URL HTTPS. Essa mesma URL funcion
 O arquivo `render.yaml` configura automaticamente o contêiner, o endereço HTTPS,
 o teste de saúde e um disco persistente de 1 GB. No painel do Render:
 
+O nome configurado para o serviço é `avaliador-podcast`, portanto o endereço
+pretendido é `https://avaliador-podcast.onrender.com` (se estiver disponível).
+
 1. crie um **Blueprint** usando este repositório privado;
 2. informe `APP_PASSWORD` e `OPENAI_API_KEY` como segredos;
 3. revise e aprove o plano antes de implantar.
