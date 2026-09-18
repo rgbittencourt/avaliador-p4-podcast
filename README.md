@@ -120,3 +120,12 @@ com autenticação. Consulte [DEPLOY.md](DEPLOY.md) para variáveis, volume e ba
 
 A configuração de nuvem está pronta em `render.yaml`. Ela cria um serviço web
 protegido por senha e mantém as turmas em um disco persistente.
+
+## Identidade visual e instalação
+
+O aplicativo inclui ícone próprio, favicon SVG/PNG/ICO, ícone para a tela inicial
+do iPhone/iPad, ícones Android/PWA, imagem de compartilhamento e manifesto web.
+Em navegadores compatíveis, use **Adicionar à tela inicial** ou **Instalar
+aplicativo** para abri-lo como um app. Os arquivos finais ficam em
+`public/assets/`; o script `scripts/generate-icons.py` recria todos os tamanhos
+a partir do arquivo mestre.
