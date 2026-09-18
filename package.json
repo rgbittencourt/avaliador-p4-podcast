@@ -1,0 +1,20 @@
+{
+  "name": "avaliador-p4-podcast-tedpro",
+  "version": "1.0.0",
+  "description": "Ferramenta para avaliar a atividade P4 (Podcast) do TEDPRO/IFSC contra a rubrica oficial, com sugestão de pontuação e transcrição automática via API da OpenAI.",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^2.0.2"
+  }
+}

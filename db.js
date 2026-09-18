@@ -1,0 +1,121 @@
+const fs = require('fs/promises');
+const path = require('path');
+
+const DIRETORIO_DADOS = process.env.DATA_DIR || path.join(__dirname, 'data');
+const ARQUIVO = path.join(DIRETORIO_DADOS, 'turmas.json');
+const LEGADO = path.join(DIRETORIO_DADOS, 'turma.json');
+
+function slug(valor){
+  return String(valor || '').trim().toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '').slice(0, 80) || `turma-${Date.now()}`;
+}
+
+async function salvar(base){
+  await fs.mkdir(path.dirname(ARQUIVO), {recursive:true});
+  const temporario = `${ARQUIVO}.tmp`;
+  await fs.writeFile(temporario, JSON.stringify(base, null, 2), 'utf-8');
+  await fs.rename(temporario, ARQUIVO);
+}
+
+async function inicializar(){
+  try{ return JSON.parse(await fs.readFile(ARQUIVO, 'utf-8')); } catch{}
+  let avaliacoes=[];
+  try{
+    const legado = JSON.parse(await fs.readFile(LEGADO, 'utf-8'));
+    if(Array.isArray(legado)) avaliacoes = legado;
+  }catch{}
+  const agora = new Date().toISOString();
+  const base = {version:2, turmas: avaliacoes.length ? [{id:'turma-principal', nome:'Turma principal', criadaEm:agora, atualizadaEm:agora, avaliacoes}] : []};
+  await salvar(base);
+  return base;
+}
+
+async function ler(){
+  const base = await inicializar();
+  if(!base || !Array.isArray(base.turmas)) throw new Error('Banco de turmas inválido.');
+  return base;
+}
+
+async function listarTurmas(){
+  const base = await ler();
+  return base.turmas.map(({avaliacoes, ...turma})=>({...turma, quantidade:(avaliacoes||[]).length}));
+}
+
+async function criarTurma(nome){
+  nome = String(nome || '').trim();
+  if(!nome) throw new Error('Informe o nome da turma.');
+  const base = await ler();
+  let id = slug(nome), contador=2;
+  while(base.turmas.some(t=>t.id===id)) id = `${slug(nome)}-${contador++}`;
+  const agora = new Date().toISOString();
+  const turma = {id, nome:nome.slice(0,120), criadaEm:agora, atualizadaEm:agora, avaliacoes:[]};
+  base.turmas.push(turma);
+  await salvar(base);
+  return {id:turma.id, nome:turma.nome, criadaEm:turma.criadaEm, atualizadaEm:turma.atualizadaEm, quantidade:0};
+}
+
+async function renomearTurma(id, nome){
+  nome = String(nome || '').trim();
+  if(!nome) throw new Error('Informe o nome da turma.');
+  const base = await ler();
+  const turma = base.turmas.find(t=>t.id===id);
+  if(!turma) throw new Error('Turma não encontrada.');
+  turma.nome = nome.slice(0,120);
+  turma.atualizadaEm = new Date().toISOString();
+  await salvar(base);
+  return {id:turma.id, nome:turma.nome, criadaEm:turma.criadaEm, atualizadaEm:turma.atualizadaEm, quantidade:turma.avaliacoes.length};
+}
+
+async function listarAvaliacoes(turmaId){
+  const base = await ler();
+  const turma = base.turmas.find(t=>t.id===turmaId);
+  if(!turma) throw new Error('Turma não encontrada.');
+  return turma.avaliacoes || [];
+}
+
+async function upsertAvaliacao(turmaId, id, dados){
+  const base = await ler();
+  const turma = base.turmas.find(t=>t.id===turmaId);
+  if(!turma) throw new Error('Turma não encontrada.');
+  const idx = turma.avaliacoes.findIndex(a=>a.id===id);
+  const registro = {...dados, id};
+  if(idx>=0) turma.avaliacoes[idx]=registro; else turma.avaliacoes.push(registro);
+  turma.atualizadaEm = new Date().toISOString();
+  await salvar(base);
+  return registro;
+}
+
+async function removerAvaliacao(turmaId, id){
+  const base = await ler();
+  const turma = base.turmas.find(t=>t.id===turmaId);
+  if(!turma) throw new Error('Turma não encontrada.');
+  const antes = turma.avaliacoes.length;
+  turma.avaliacoes = turma.avaliacoes.filter(a=>a.id!==id);
+  turma.atualizadaEm = new Date().toISOString();
+  await salvar(base);
+  return turma.avaliacoes.length !== antes;
+}
+
+async function limparAvaliacoes(turmaId){
+  const base = await ler();
+  const turma = base.turmas.find(t=>t.id===turmaId);
+  if(!turma) throw new Error('Turma não encontrada.');
+  turma.avaliacoes=[];
+  turma.atualizadaEm = new Date().toISOString();
+  await salvar(base);
+}
+
+async function excluirTurma(id, confirmarNome){
+  const base = await ler();
+  const indice = base.turmas.findIndex(t=>t.id===id);
+  if(indice<0) throw new Error('Turma não encontrada.');
+  const turma = base.turmas[indice];
+  if(String(confirmarNome || '') !== turma.nome) throw new Error('O nome de confirmação não corresponde ao nome da turma.');
+  const resumo = {id:turma.id, nome:turma.nome, avaliacoesRemovidas:(turma.avaliacoes||[]).length};
+  base.turmas.splice(indice,1);
+  await salvar(base);
+  return resumo;
+}
+
+module.exports = {listarTurmas, criarTurma, renomearTurma, excluirTurma, listarAvaliacoes, upsertAvaliacao, removerAvaliacao, limparAvaliacoes};

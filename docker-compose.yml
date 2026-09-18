@@ -1,0 +1,16 @@
+services:
+  avaliador:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+    volumes:
+      - avaliador_dados:/app/data
+    restart: unless-stopped
+
+volumes:
+  avaliador_dados:
