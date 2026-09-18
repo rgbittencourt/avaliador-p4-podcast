@@ -21,18 +21,18 @@ Depois de hospedado, o provedor fornecerá uma URL HTTPS. Essa mesma URL funcion
 ## Implantação no Render
 
 O arquivo `render.yaml` configura automaticamente o contêiner, o endereço HTTPS,
-o teste de saúde e um disco persistente de 1 GB. No painel do Render:
+o teste de saúde e o plano gratuito. No painel do Render:
 
 O nome configurado para o serviço é `avaliador-podcast`, portanto o endereço
 pretendido é `https://avaliador-podcast.onrender.com` (se estiver disponível).
 
 1. crie um **Blueprint** usando este repositório privado;
-2. informe `APP_PASSWORD` e `OPENAI_API_KEY` como segredos;
-3. revise e aprove o plano antes de implantar.
+2. crie um banco PostgreSQL gratuito na Neon e copie a connection string;
+3. informe `DATABASE_URL`, `APP_PASSWORD` e `OPENAI_API_KEY` como segredos;
+4. revise e implante usando o plano **Free**.
 
-O disco persistente requer um serviço pago no Render. Essa configuração é
-necessária para que as turmas não sejam perdidas em reinicializações ou novas
-versões do aplicativo.
+Sem `DATABASE_URL`, o Render gratuito perderá as turmas ao suspender ou reiniciar
+o serviço. No computador local, o aplicativo continua usando `data/turmas.json`.
 
 ## Backup
 

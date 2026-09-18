@@ -1,9 +1,23 @@
 const fs = require('fs/promises');
 const path = require('path');
+const { Pool } = require('pg');
 
 const DIRETORIO_DADOS = process.env.DATA_DIR || path.join(__dirname, 'data');
 const ARQUIVO = path.join(DIRETORIO_DADOS, 'turmas.json');
 const LEGADO = path.join(DIRETORIO_DADOS, 'turma.json');
+const DATABASE_URL = process.env.DATABASE_URL || '';
+const pool = DATABASE_URL ? new Pool({connectionString:DATABASE_URL, ssl:{rejectUnauthorized:false}}) : null;
+let tabelaPronta = false;
+
+async function prepararPostgres(){
+  if(!pool || tabelaPronta) return;
+  await pool.query(`CREATE TABLE IF NOT EXISTS app_state (
+    id integer PRIMARY KEY,
+    payload jsonb NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  )`);
+  tabelaPronta = true;
+}
 
 function slug(valor){
   return String(valor || '').trim().toLowerCase().normalize('NFD')
@@ -12,6 +26,15 @@ function slug(valor){
 }
 
 async function salvar(base){
+  if(pool){
+    await prepararPostgres();
+    await pool.query(
+      `INSERT INTO app_state (id, payload, updated_at) VALUES (1, $1::jsonb, now())
+       ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()`,
+      [JSON.stringify(base)]
+    );
+    return;
+  }
   await fs.mkdir(path.dirname(ARQUIVO), {recursive:true});
   const temporario = `${ARQUIVO}.tmp`;
   await fs.writeFile(temporario, JSON.stringify(base, null, 2), 'utf-8');
@@ -19,6 +42,15 @@ async function salvar(base){
 }
 
 async function inicializar(){
+  if(pool){
+    await prepararPostgres();
+    const resultado = await pool.query('SELECT payload FROM app_state WHERE id = 1');
+    if(resultado.rows[0]?.payload) return resultado.rows[0].payload;
+    const agora = new Date().toISOString();
+    const base = {version:2, turmas:[]};
+    await salvar(base);
+    return base;
+  }
   try{ return JSON.parse(await fs.readFile(ARQUIVO, 'utf-8')); } catch{}
   let avaliacoes=[];
   try{

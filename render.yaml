@@ -5,14 +5,14 @@ services:
     repo: https://github.com/rgbittencourt/avaliador-p4-podcast
     branch: main
     region: ohio
-    plan: starter
+    plan: free
     autoDeployTrigger: commit
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATA_DIR
-        value: /app/data
+      - key: DATABASE_URL
+        sync: false
       - key: APP_USERNAME
         value: professor
       - key: APP_PASSWORD
@@ -21,7 +21,3 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
-    disk:
-      name: avaliador-data
-      mountPath: /app/data
-      sizeGB: 1
