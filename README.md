@@ -94,7 +94,8 @@ pontuação por IA e a transcrição automática exigem a chave.
   não fornece o áudio completo para download/transcrição; o aplicativo não
   tenta contornar essa restrição. Sem arquivo ou transcrição, a IA deixa o
   critério de produção sem sugestão para o professor decidir após ouvir.
-- As turmas ficam só na sua máquina, em `data/turmas.json`.
+- As turmas ficam em `data/turmas.json`, no computador local ou no volume
+  persistente configurado na hospedagem.
 
 ## Continuando no Codex
 
@@ -116,3 +117,6 @@ Para acesso por computador, celular e tablet, hospede o contêiner Docker em
 um serviço com HTTPS e volume persistente. A mesma URL funcionará em todos os
 navegadores. Em produção, o servidor exige `APP_PASSWORD` e protege a interface
 com autenticação. Consulte [DEPLOY.md](DEPLOY.md) para variáveis, volume e backup.
+
+A configuração de nuvem está pronta em `render.yaml`. Ela cria um serviço web
+protegido por senha e mantém as turmas em um disco persistente.

@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: avaliador-p4-podcast
+    runtime: docker
+    repo: https://github.com/rgbittencourt/avaliador-p4-podcast
+    branch: main
+    region: ohio
+    plan: starter
+    autoDeployTrigger: commit
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /app/data
+      - key: APP_USERNAME
+        value: professor
+      - key: APP_PASSWORD
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+    disk:
+      name: avaliador-data
+      mountPath: /app/data
+      sizeGB: 1

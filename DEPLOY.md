@@ -18,6 +18,19 @@ O serviço deve expor a porta definida em `PORT` e montar um volume persistente 
 
 Depois de hospedado, o provedor fornecerá uma URL HTTPS. Essa mesma URL funciona em computadores, celulares e tablets. O navegador solicitará o usuário e a senha configurados.
 
+## Implantação no Render
+
+O arquivo `render.yaml` configura automaticamente o contêiner, o endereço HTTPS,
+o teste de saúde e um disco persistente de 1 GB. No painel do Render:
+
+1. crie um **Blueprint** usando este repositório privado;
+2. informe `APP_PASSWORD` e `OPENAI_API_KEY` como segredos;
+3. revise e aprove o plano antes de implantar.
+
+O disco persistente requer um serviço pago no Render. Essa configuração é
+necessária para que as turmas não sejam perdidas em reinicializações ou novas
+versões do aplicativo.
+
 ## Backup
 
 Use regularmente **Exportar turma (JSON)**. Esse arquivo permite restaurar avaliações mesmo se o serviço de hospedagem for substituído.
