@@ -3,9 +3,13 @@
   "short_name": "Avaliador P4",
   "description": "Avaliação de podcasts educacionais com rubrica, feedback e relatório executivo.",
   "lang": "pt-BR",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "any",
+  "categories": ["education", "productivity"],
+  "prefer_related_applications": false,
   "background_color": "#F4F6F7",
   "theme_color": "#155B78",
   "icons": [

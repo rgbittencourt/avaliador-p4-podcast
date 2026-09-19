@@ -36,7 +36,10 @@ const upload = multer({
 });
 
 app.use((req, res, next) => {
-  if(!APP_PASSWORD || req.path === '/api/health') return next();
+  // O shell estático precisa ser público para Android/Chrome conseguirem ler o
+  // manifesto, os ícones e o service worker e oferecer a instalação como PWA.
+  // Todos os dados e operações continuam protegidos atrás de /api/.
+  if(!APP_PASSWORD || req.path === '/api/health' || !req.path.startsWith('/api/')) return next();
   const cabecalho = req.headers.authorization || '';
   const token = cabecalho.startsWith('Basic ') ? cabecalho.slice(6) : '';
   let usuario='', senha='';
