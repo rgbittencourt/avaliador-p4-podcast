@@ -859,6 +859,43 @@ function copiarFeedback(){
   });
 }
 
+function copiarCampo(id){
+  const campo = document.getElementById(id);
+  if(!campo || !campo.value.trim()) return;
+  navigator.clipboard.writeText(campo.value).catch(()=>{
+    campo.select(); document.execCommand('copy');
+  });
+}
+
+async function analisarCoerencia(){
+  const btn = document.getElementById('btnAnalisarCoerencia');
+  const status = document.getElementById('coerenciaStatus');
+  const campos = coletarCamposParaIA();
+  campos.nome = document.getElementById('nome').value.trim();
+  if(!campos.desafio && !campos.publicoAlvo && !campos.roteiro && !campos.contribuicao){
+    status.innerHTML = '<span style="color:var(--vermelho);">Importe o relatório ou preencha os campos da proposta antes de analisar.</span>';
+    return;
+  }
+  const analiseAtual = document.getElementById('analiseCoerenciaOut').value.trim();
+  const feedbackAtual = document.getElementById('feedbackCoerenciaOut').value.trim();
+  if((analiseAtual || feedbackAtual) && !confirm('Gerar novamente substituirá os textos de coerência atuais. Continuar?')) return;
+  btn.disabled = true;
+  status.textContent = 'Analisando as relações entre desafio, público, estratégia, roteiro e contribuição...';
+  try{
+    const resp = await fetch('/api/analisar-coerencia', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(campos)
+    });
+    const dados = await resp.json().catch(()=>({}));
+    if(!resp.ok) throw new Error(dados.erro || `Erro ${resp.status}`);
+    document.getElementById('analiseCoerenciaOut').value = dados.analise_coerencia || '';
+    document.getElementById('feedbackCoerenciaOut').value = dados.feedback_coerencia || '';
+    status.innerHTML = '<span style="color:var(--verde);">✔ Análise e feedback gerados a partir da mesma base semântica. Revise e edite livremente antes de salvar.</span>';
+  }catch(e){
+    console.error(e);
+    status.innerHTML = `<span style="color:var(--vermelho);">Não foi possível analisar a coerência (${escaparHtml(e.message)}).</span>`;
+  }finally{ btn.disabled = false; }
+}
+
 // ---------- Turma (capacidade db, sincronizada) ----------
 // ---------- Capacidades da plataforma (db / downloads / sample) ----------
 let turmaCache = [];
@@ -1065,6 +1102,8 @@ function coletarDados(){
     alertas: alertas,
     alertasCount: alertas.length,
     feedback: document.getElementById('feedbackOut').value || gerarFeedback(),
+    analiseCoerencia: document.getElementById('analiseCoerenciaOut').value.trim(),
+    feedbackCoerencia: document.getElementById('feedbackCoerenciaOut').value.trim(),
     timestamp: new Date().toISOString()
   };
 }
@@ -1151,6 +1190,9 @@ function editarAluno(id){
   });
   atualizarNota();
   document.getElementById('feedbackOut').value = a.feedback||'';
+  document.getElementById('analiseCoerenciaOut').value = a.analiseCoerencia||'';
+  document.getElementById('feedbackCoerenciaOut').value = a.feedbackCoerencia||'';
+  document.getElementById('coerenciaStatus').textContent = (a.analiseCoerencia || a.feedbackCoerencia) ? 'Textos de coerência salvos carregados para edição.' : '';
   feedbackAlterado = false;
   document.getElementById('feedbackStatus').textContent = a.feedback ? 'Feedback salvo carregado para edição.' : '';
   verificarAvaliacaoExistente();
@@ -1183,7 +1225,7 @@ function novaAvaliacao(){
   const camposTexto = [
     'nome','matricula','orientadorIndicado','orientadorCorreto','linkPodcast',
     'transcricaoPodcast','duracao','desafio','publicoAlvo','diretrizes','roteiro',
-    'contribuicao','relato','iaDescricao','alertasManuais','feedbackOut'
+    'contribuicao','relato','iaDescricao','alertasManuais','feedbackOut','analiseCoerenciaOut','feedbackCoerenciaOut'
   ];
   camposTexto.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   ['arquivoRelatorioPdf','arquivoLocal'].forEach(id=>{
@@ -1196,7 +1238,7 @@ function novaAvaliacao(){
   ORDEM.forEach(chave=>{ document.getElementById(`obs_${chave}`).value=''; });
   feedbackAlterado = false;
   document.getElementById('feedbackStatus').textContent='';
-  ['importStatus','playerContainer','metricasAudioBox','transcreverStatus','autoAvaliarStatus','sugestaoIAStatus']
+  ['importStatus','playerContainer','metricasAudioBox','transcreverStatus','autoAvaliarStatus','sugestaoIAStatus','coerenciaStatus']
     .forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=''; });
   const duracaoBox=document.getElementById('duracaoDetectadaBox');
   if(duracaoBox){ duracaoBox.innerHTML=''; duracaoBox.style.display='none'; }
@@ -1263,6 +1305,8 @@ function normalizarRegistroImportado(reg){
     scores, total,
     alertas, alertasCount: reg.alertasCount!==undefined ? reg.alertasCount : alertas.length,
     feedback: reg.feedback || '',
+    analiseCoerencia: reg.analiseCoerencia || reg.analise_coerencia || '',
+    feedbackCoerencia: reg.feedbackCoerencia || reg.feedback_coerencia || '',
     timestamp: reg.timestamp || new Date().toISOString()
   };
 }
@@ -1303,13 +1347,14 @@ document.getElementById('arquivoImportarAvaliacao').addEventListener('change', a
 async function exportarCSV(){
   if(!turmaCache.length){ alert('Nenhum aluno salvo ainda.'); return; }
   const headers = ['nome','matricula','orientadorIndicado','linkPodcast','duracao',
-    'roteiro_pts','adequacao_pts','producao_pts','relato_pts','total','iaUsada','alertasCount'];
+    'roteiro_pts','adequacao_pts','producao_pts','relato_pts','total','iaUsada','alertasCount',
+    'analiseCoerencia','feedbackCoerencia'];
   const linhas = [headers.join(';')];
   turmaCache.forEach(a=>{
     const row = [
       a.nome, a.matricula, a.orientadorIndicado, a.linkPodcast, a.duracao,
       a.scores.roteiro, a.scores.adequacao, a.scores.producao, a.scores.relato,
-      a.total, a.iaUsada, a.alertasCount
+      a.total, a.iaUsada, a.alertasCount, a.analiseCoerencia, a.feedbackCoerencia
     ].map(v=> `"${(v===undefined||v===null?'':v).toString().replace(/"/g,'""')}"`);
     linhas.push(row.join(';'));
   });

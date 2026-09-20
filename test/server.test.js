@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { montarPrompt, pontoMaisProximo, pontuarProducaoPorEvidencia } = require('../server');
+const { montarPrompt, montarPromptCoerencia, limparSaidaCoerencia, pontoMaisProximo, pontuarProducaoPorEvidencia } = require('../server');
 
 test('normaliza pontuações para os valores oficiais da rubrica', () => {
   assert.equal(pontoMaisProximo('adequacao', 0.6), 0.5);
@@ -27,4 +27,23 @@ test('prompt diferencia roteiro, transcrição e limites da análise automática
   assert.match(prompt, /não pode avaliar dicção/i);
   assert.match(prompt, /duração 3:00/);
   assert.match(prompt, /Retorne sempre null em "producao"/);
+});
+
+test('prompt de coerência mantém as novas saídas independentes da rubrica', () => {
+  const prompt = montarPromptCoerencia({
+    nome:'Ana Silva', desafio:'Baixa participação', publicoAlvo:'Docentes',
+    diretrizes:'Linguagem acessível', roteiro:'Apresentar causas e estratégias', contribuicao:'Apoiar reflexão'
+  });
+  assert.match(prompt, /UMA análise semântica estruturada/);
+  assert.match(prompt, /não atribua nota, pontos/i);
+  assert.match(prompt, /analise_coerencia/);
+  assert.match(prompt, /feedback_coerencia/);
+  assert.match(prompt, /Prof\. Rogério/);
+});
+
+test('saída de coerência exige dois textos e normaliza a assinatura', () => {
+  const saida = limparSaidaCoerencia({analise_coerencia:'Parecer técnico.', feedback_coerencia:'Ana, vale refletir.\n\nUm abraço,\nProf. Rogério'});
+  assert.equal(saida.analise_coerencia, 'Parecer técnico.');
+  assert.match(saida.feedback_coerencia, /Um abraço,\nProf\. Rogério$/);
+  assert.throws(()=>limparSaidaCoerencia({analise_coerencia:'Só um texto'}));
 });

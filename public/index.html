@@ -132,6 +132,10 @@
   .no-alert{color:var(--verde);font-size:0.83rem;font-weight:600;}
 
   textarea#feedbackOut{min-height:220px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:0.82rem;line-height:1.5;}
+  .coerencia-card{border-top:4px solid var(--azul-header);}
+  .coerencia-card textarea{min-height:190px;font-size:0.84rem;line-height:1.55;}
+  .coerencia-bloco{margin-top:16px;padding-top:14px;border-top:1px dashed var(--cinza-borda);}
+  .coerencia-bloco h3{margin:0 0 4px;color:var(--azul-titulo);font-size:0.92rem;}
 
   .btn{
     background:var(--azul-header);color:#fff;border:none;border-radius:6px;
@@ -327,6 +331,27 @@
         <textarea id="feedbackOut" placeholder="Gere uma sugestão e edite livremente antes de salvar."></textarea>
       </div>
 
+      <div class="card coerencia-card">
+        <h2>Coerência da proposta <span class="muted">(complementar, sem pontuação)</span></h2>
+        <div class="hint">Uma única análise semântica relaciona desafio, público-alvo, diretrizes, roteiro e contribuição. Ela não altera a rubrica, a nota nem o feedback da avaliação.</div>
+        <div class="toolbar">
+          <button type="button" class="btn" id="btnAnalisarCoerencia" onclick="analisarCoerencia()">Analisar coerência</button>
+        </div>
+        <div id="coerenciaStatus" class="hint" style="margin-top:6px;"></div>
+        <div class="coerencia-bloco">
+          <h3>Análise de Coerência da Proposta</h3>
+          <div class="hint">Parecer técnico destinado ao professor. Totalmente editável.</div>
+          <div class="toolbar"><button type="button" class="btn secondary" onclick="copiarCampo('analiseCoerenciaOut')">Copiar análise</button></div>
+          <textarea id="analiseCoerenciaOut" placeholder="O parecer técnico aparecerá aqui."></textarea>
+        </div>
+        <div class="coerencia-bloco">
+          <h3>Feedback sobre a Coerência da Proposta</h3>
+          <div class="hint">Mensagem pedagógica dirigida ao estudante. Totalmente editável.</div>
+          <div class="toolbar"><button type="button" class="btn secondary" onclick="copiarCampo('feedbackCoerenciaOut')">Copiar feedback de coerência</button></div>
+          <textarea id="feedbackCoerenciaOut" placeholder="O feedback de coerência aparecerá aqui."></textarea>
+        </div>
+      </div>
+
       <div class="card">
         <h2>Turma</h2>
         <label for="turmaSelect" style="margin-top:0;">Turma ativa</label>
@@ -367,7 +392,7 @@
     </div>
 
   </div>
-  <div class="footer-note">As turmas ficam salvas no servidor deste app (arquivo data/turmas.json). Em uma hospedagem, mantenha a pasta data em um volume persistente e proteja o acesso com senha. O PDF é lido inteiramente no seu navegador; só os campos de texto (nunca o PDF em si) são enviados à API da OpenAI quando você pede uma sugestão de avaliação ou uma transcrição.</div>
+  <div class="footer-note">As turmas ficam salvas no servidor deste app (arquivo data/turmas.json). Em uma hospedagem, mantenha a pasta data em um volume persistente e proteja o acesso com senha. O PDF é lido inteiramente no seu navegador; só os campos de texto (nunca o PDF em si) são enviados à API da OpenAI quando você pede uma sugestão de avaliação, uma análise de coerência ou uma transcrição.</div>
 </div>
 
 <!-- pdf.js (pdfjs-dist 2.16.105) embutido neste arquivo: sem dependências externas, funciona 100% offline, mesmo abrindo direto do disco. -->

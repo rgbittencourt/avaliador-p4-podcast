@@ -162,6 +162,79 @@ function pontoMaisProximo(chave, pontos){
   return melhor;
 }
 
+function montarPromptCoerencia(campos){
+  const transcricao = String(campos.transcricao || '').trim();
+  const evidenciaProduto = transcricao
+    ? `Há uma transcrição do podcast. Ela pode ser usada apenas para verificar o conteúdo efetivamente falado, sem inferir qualidade sonora, dicção, efeitos ou edição.\nTranscrição: ${transcricao}`
+    : 'Não há transcrição nem acesso ao áudio. Analise o que foi proposto e planejado no formulário; não afirme que algo ocorreu no podcast.';
+
+  return `Você apoia o Prof. Rogério na leitura pedagógica de uma proposta de podcast da pós-graduação TEDPRO/IFSC.
+
+TAREFA
+Faça UMA análise semântica estruturada, tendo DESAFIO e PÚBLICO-ALVO como eixos, e produza duas saídas coerentes entre si, mas claramente diferentes:
+1. "analise_coerencia": parecer técnico e diagnóstico para o professor, em 2 a 4 parágrafos.
+2. "feedback_coerencia": mensagem pessoal ao estudante, em 3 a 5 parágrafos, escrita como se fosse o Prof. Rogério. Use o primeiro nome somente se estiver informado com segurança. Termine EXATAMENTE com:\nUm abraço,\nProf. Rogério
+
+REGRAS ESSENCIAIS
+- Isto é complementar e informativo: não atribua nota, pontos, conceito, percentual, ranking ou classificação.
+- Não trate coerência como veracidade, correção gramatical ou qualidade técnica do áudio.
+- Faça análise semântica profunda; coincidência de palavras-chave não prova coerência.
+- Examine o encadeamento: desafio -> público -> estratégia/diretrizes -> roteiro/conteúdo -> contribuição para o desafio.
+- Diferencie falar do mesmo tema de contribuir efetivamente para o desafio.
+- Compare explicitamente o que as diretrizes prometem com o que o roteiro sustenta.
+- Na contribuição, procure a cadeia recurso -> experiência/conhecimento -> efeito sobre o público -> relação com o desafio.
+- Reconheça pontos fortes com justificativa; identifique tensões sem convertê-las automaticamente em erros.
+- Não invente intenções, objetivos, características do público ou conteúdo ausente. Diferencie campo vazio de informação superficial.
+- Se faltarem dados, continue com o que existe e declare com precisão as limitações.
+- Diferencie proposta/roteiro do produto efetivamente analisado. Sem áudio ou transcrição, escreva "o roteiro propõe" ou "a estratégia prevê", nunca "no podcast você faz".
+- O feedback deve selecionar os achados pedagogicamente mais úteis, falar diretamente ao estudante, evitar elogios vazios e pode incluir uma pergunta curta apenas quando ligada a um problema real.
+- O feedback não pode ser mera cópia, resumo ou conversão mecânica do parecer técnico para segunda pessoa.
+
+DADOS DO TRABALHO
+Nome: ${campos.nome || '(não informado)'}
+Desafio: ${campos.desafio || '(campo vazio)'}
+Público-alvo: ${campos.publicoAlvo || '(campo vazio)'}
+Diretrizes de estilo: ${campos.diretrizes || '(campo vazio)'}
+Roteiro planejado: ${campos.roteiro || '(campo vazio)'}
+Contribuição declarada para o desafio: ${campos.contribuicao || '(campo vazio)'}
+Relato da experiência: ${campos.relato || '(campo vazio)'}
+${evidenciaProduto}
+
+Responda APENAS com JSON válido neste formato:
+{"coerencia":{"relacao_desafio_publico":"string","adequacao_publico":"string","relacao_desafio_roteiro":"string","relacao_diretrizes_roteiro":"string","contribuicao_para_desafio":"string","consistencia_global":"string","pontos_fortes":["string"],"tensoes":["string"],"desalinhamentos":["string"],"informacoes_insuficientes":["string"]},"analise_coerencia":"string","feedback_coerencia":"string"}`;
+}
+
+function limparSaidaCoerencia(resultado){
+  const analise = String(resultado?.analise_coerencia || '').trim();
+  let feedback = String(resultado?.feedback_coerencia || '').trim();
+  if(!analise || !feedback) throw new Error('A IA não produziu as duas saídas de coerência.');
+  feedback = feedback.replace(/\s*Um abraço,\s*Prof\. Rogério\s*$/i, '').trim();
+  feedback += '\n\nUm abraço,\nProf. Rogério';
+  return { analise_coerencia: analise, feedback_coerencia: feedback };
+}
+
+app.post('/api/analisar-coerencia', async (req, res) => {
+  if(precisaChaveOpenAI(res)) return;
+  try{
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model:OPENAI_MODEL, response_format:{type:'json_object'}, temperature:0.25,
+        messages:[{role:'user', content:montarPromptCoerencia(req.body || {})}] })
+    });
+    if(!resp.ok){
+      const texto = await resp.text().catch(()=> '');
+      console.error('OpenAI coerência erro', resp.status, texto);
+      return res.status(resp.status===429?429:502).json({erro:`A API da OpenAI recusou a análise de coerência (${resp.status}).`});
+    }
+    const data = await resp.json();
+    let resultado;
+    try{ resultado = JSON.parse(data.choices?.[0]?.message?.content); }
+    catch{ return res.status(502).json({erro:'A IA não respondeu em um formato reconhecível. Tente novamente.'}); }
+    res.json(limparSaidaCoerencia(resultado));
+  }catch(e){ console.error(e); res.status(500).json({erro:e.message}); }
+});
+
 function pontuarProducaoPorEvidencia(campos){
   const link = String(campos.linkPodcast || '').trim();
   if(!link) return {pontos:0, justificativa:'O podcast não foi apresentado por link ou arquivo.'};
@@ -316,4 +389,4 @@ if(require.main === module){
   });
 }
 
-module.exports = { app, montarPrompt, pontoMaisProximo, pontuarProducaoPorEvidencia };
+module.exports = { app, montarPrompt, montarPromptCoerencia, limparSaidaCoerencia, pontoMaisProximo, pontuarProducaoPorEvidencia };

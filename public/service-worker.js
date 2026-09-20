@@ -1,4 +1,4 @@
-const CACHE = 'avaliador-podcast-shell-v2';
+const CACHE = 'avaliador-podcast-shell-v3';
 const SHELL = [
   '/',
   '/app.js',
