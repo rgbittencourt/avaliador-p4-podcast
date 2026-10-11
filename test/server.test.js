@@ -42,8 +42,40 @@ test('prompt de coerência mantém as novas saídas independentes da rubrica', (
 });
 
 test('saída de coerência exige dois textos e normaliza a assinatura', () => {
-  const saida = limparSaidaCoerencia({analise_coerencia:'Parecer técnico.', feedback_coerencia:'Ana, vale refletir.\n\nUm abraço,\nProf. Rogério'});
+  const coerencia = {
+    relacao_desafio_publico:'Relação clara.', adequacao_publico:'Linguagem adequada.',
+    relacao_desafio_roteiro:'Roteiro relacionado.', relacao_diretrizes_roteiro:'Diretrizes concretizadas.',
+    contribuicao_para_desafio:'Contribuição explicitada.', consistencia_global:'Conjunto consistente.',
+    pontos_fortes:['Foco'], tensoes:[], desalinhamentos:[], informacoes_insuficientes:[]
+  };
+  const saida = limparSaidaCoerencia({coerencia, analise_coerencia:'Parecer técnico.', feedback_coerencia:'Ana, vale refletir.\n\nUm abraço,\nProf. Rogério'});
   assert.equal(saida.analise_coerencia, 'Parecer técnico.');
   assert.match(saida.feedback_coerencia, /Um abraço,\nProf\. Rogério$/);
-  assert.throws(()=>limparSaidaCoerencia({analise_coerencia:'Só um texto'}));
+  assert.throws(()=>limparSaidaCoerencia({coerencia, analise_coerencia:'Só um texto'}));
+  assert.throws(()=>limparSaidaCoerencia({analise_coerencia:'Parecer.', feedback_coerencia:'Feedback.'}), /estruturada/);
+  assert.throws(()=>limparSaidaCoerencia({coerencia, analise_coerencia:'Texto igual.', feedback_coerencia:' texto   igual. '}), /mesmo texto/);
+});
+
+test('prompt cobre tensões de público, contradições e campos ausentes sem alterar a rubrica', () => {
+  const prompt = montarPromptCoerencia({
+    desafio:'Combater desinformação', publicoAlvo:'Especialistas e público geral',
+    diretrizes:'Usar analogias', roteiro:'Sequência técnica sem contextualização', contribuicao:''
+  });
+  assert.match(prompt, /público amplo ou heterogêneo não é automaticamente um problema/i);
+  assert.match(prompt, /o que as diretrizes prometem com o que o roteiro sustenta/i);
+  assert.match(prompt, /Contribuição declarada para o desafio: \(campo vazio\)/);
+  assert.match(prompt, /parecer integrado, não uma lista/i);
+  assert.doesNotMatch(prompt, /RUBRICA OFICIAL/);
+});
+
+test('prompt de coerência distingue planejamento de produto efetivamente analisado', () => {
+  const semAudio = montarPromptCoerencia({roteiro:'Explicar conceitos com exemplos'});
+  assert.match(semAudio, /Não há transcrição nem acesso ao áudio/);
+  assert.match(semAudio, /nunca "no podcast você faz"/);
+
+  const comTranscricao = montarPromptCoerencia({
+    roteiro:'Explicar conceitos com exemplos', transcricao:'O episódio apresentou dois exemplos.'
+  });
+  assert.match(comTranscricao, /conteúdo efetivamente falado/);
+  assert.match(comTranscricao, /sem inferir qualidade sonora, dicção, efeitos ou edição/i);
 });

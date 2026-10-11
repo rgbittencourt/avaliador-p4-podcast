@@ -49,6 +49,13 @@ pontuação por IA e a transcrição automática exigem a chave.
   critérios da rubrica, com justificativa, a partir do relatório, das
   métricas de áudio e da transcrição (quando houver). A sugestão é só um
   rascunho — a decisão final é sempre sua.
+- **Analisa a coerência semântica da proposta** (rota
+  `/api/analisar-coerencia`) usando desafio e público-alvo como eixos para
+  relacionar diretrizes, roteiro e contribuição. A mesma leitura estruturada
+  gera duas saídas distintas e editáveis: um parecer diagnóstico para o
+  professor e um feedback pedagógico, escrito na voz do Prof. Rogério, para o
+  estudante. Essas saídas são complementares: não recebem pontos, não alteram
+  critérios e não interferem no cálculo da rubrica.
 - **Gera o texto de feedback** no seu padrão de sempre, a partir da nota
   final. A seleção da rubrica, as observações por critério, os alertas manuais
   e o próprio texto do feedback são editáveis. Enquanto o feedback não tiver
@@ -89,7 +96,7 @@ pontuação por IA e a transcrição automática exigem a chave.
   a lugar nenhum.
 - Só os **campos de texto já extraídos** (roteiro, relato, etc.) e as
   **métricas objetivas do áudio** são enviados à API da OpenAI quando você
-  pede uma sugestão de pontuação.
+  pede uma sugestão de pontuação ou uma análise de coerência.
 - O **áudio do podcast** só é enviado à OpenAI quando você aperta
   "Transcrever automaticamente" — nesse caso o arquivo de áudio é enviado
   à API de transcrição da OpenAI (sujeito à política de privacidade deles).
