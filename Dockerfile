@@ -2,7 +2,7 @@ FROM node:22-alpine
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile --prod
-COPY server.js db.js rubrica.js ./
+COPY server.js db.js github-backup.js rubrica.js ./
 COPY public ./public
 RUN mkdir -p /app/data
 ENV NODE_ENV=production
