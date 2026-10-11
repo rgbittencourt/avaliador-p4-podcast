@@ -189,15 +189,22 @@ REGRAS ESSENCIAIS
 - Não trate coerência como veracidade, correção gramatical ou qualidade técnica do áudio.
 - Faça análise semântica profunda; coincidência de palavras-chave não prova coerência.
 - Examine o encadeamento: desafio -> público -> estratégia/diretrizes -> roteiro/conteúdo -> contribuição para o desafio.
+- Verifique se o público é beneficiário, participante, agente ou interessado no desafio; não invente uma relação ausente.
+- Avalie se linguagem, complexidade, profundidade, conhecimentos prévios, exemplos, formato e estratégia são adequados ao público.
+- Um público amplo ou heterogêneo não é automaticamente um problema: verifique se a proposta apresenta uma estratégia concreta para atendê-lo.
 - Diferencie falar do mesmo tema de contribuir efetivamente para o desafio.
 - Compare explicitamente o que as diretrizes prometem com o que o roteiro sustenta.
 - Na contribuição, procure a cadeia recurso -> experiência/conhecimento -> efeito sobre o público -> relação com o desafio.
+- Compare também o que o estudante declara com aquilo que efetivamente planejou; intenção declarada não é evidência de realização.
 - Reconheça pontos fortes com justificativa; identifique tensões sem convertê-las automaticamente em erros.
 - Não invente intenções, objetivos, características do público ou conteúdo ausente. Diferencie campo vazio de informação superficial.
 - Se faltarem dados, continue com o que existe e declare com precisão as limitações.
 - Diferencie proposta/roteiro do produto efetivamente analisado. Sem áudio ou transcrição, escreva "o roteiro propõe" ou "a estratégia prevê", nunca "no podcast você faz".
+- A análise para o professor deve ser um parecer integrado, não uma lista, checklist ou nova rubrica.
 - O feedback deve selecionar os achados pedagogicamente mais úteis, falar diretamente ao estudante, evitar elogios vazios e pode incluir uma pergunta curta apenas quando ligada a um problema real.
 - O feedback não pode ser mera cópia, resumo ou conversão mecânica do parecer técnico para segunda pessoa.
+- No feedback, explique por que uma escolha funciona e, diante de um desalinhamento, indique o ponto, por que merece atenção e o que deve ser reconsiderado ou explicitado.
+- Não use tabela, checklist, lista ou subtítulos dentro do feedback.
 
 DADOS DO TRABALHO
 Nome: ${campos.nome || '(não informado)'}
@@ -214,9 +221,23 @@ Responda APENAS com JSON válido neste formato:
 }
 
 function limparSaidaCoerencia(resultado){
+  const estrutura = resultado?.coerencia;
+  const camposTexto = [
+    'relacao_desafio_publico', 'adequacao_publico', 'relacao_desafio_roteiro',
+    'relacao_diretrizes_roteiro', 'contribuicao_para_desafio', 'consistencia_global'
+  ];
+  const camposLista = ['pontos_fortes', 'tensoes', 'desalinhamentos', 'informacoes_insuficientes'];
+  const estruturaValida = estrutura && typeof estrutura === 'object'
+    && camposTexto.every(chave => typeof estrutura[chave] === 'string')
+    && camposLista.every(chave => Array.isArray(estrutura[chave]));
   const analise = String(resultado?.analise_coerencia || '').trim();
   let feedback = String(resultado?.feedback_coerencia || '').trim();
+  if(!estruturaValida) throw new Error('A IA não produziu a análise semântica estruturada esperada.');
   if(!analise || !feedback) throw new Error('A IA não produziu as duas saídas de coerência.');
+  const comparar = texto => texto.toLocaleLowerCase('pt-BR').replace(/\s+/g, ' ').trim();
+  if(comparar(analise) === comparar(feedback)){
+    throw new Error('A IA repetiu o mesmo texto para análise e feedback.');
+  }
   feedback = feedback.replace(/\s*Um abraço,\s*Prof\. Rogério\s*$/i, '').trim();
   feedback += '\n\nUm abraço,\nProf. Rogério';
   return { analise_coerencia: analise, feedback_coerencia: feedback };
