@@ -109,6 +109,15 @@ app.delete('/api/turmas/:turmaId/avaliacoes', async (req, res) => {
   catch(e){ console.error(e); res.status(500).json({erro: e.message}); }
 });
 
+app.get('/api/backup/github', (_req, res) => {
+  res.json(db.statusBackupGitHub());
+});
+
+app.post('/api/backup/github', async (_req, res) => {
+  try{ res.json(await db.sincronizarBackupGitHub()); }
+  catch(e){ console.error(e); res.status(503).json({erro:e.message, ...db.statusBackupGitHub()}); }
+});
+
 // ---------- Sugestão de pontuação por IA ----------
 function montarPrompt(campos){
   const rubricaTexto = ORDEM.map(chave => {

@@ -1,6 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const { Pool } = require('pg');
+const githubBackup = require('./github-backup');
 
 const DIRETORIO_DADOS = process.env.DATA_DIR || path.join(__dirname, 'data');
 const ARQUIVO = path.join(DIRETORIO_DADOS, 'turmas.json');
@@ -33,12 +34,16 @@ async function salvar(base){
        ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()`,
       [JSON.stringify(base)]
     );
-    return;
+  } else {
+    await fs.mkdir(path.dirname(ARQUIVO), {recursive:true});
+    const temporario = `${ARQUIVO}.tmp`;
+    await fs.writeFile(temporario, JSON.stringify(base, null, 2), 'utf-8');
+    await fs.rename(temporario, ARQUIVO);
   }
-  await fs.mkdir(path.dirname(ARQUIVO), {recursive:true});
-  const temporario = `${ARQUIVO}.tmp`;
-  await fs.writeFile(temporario, JSON.stringify(base, null, 2), 'utf-8');
-  await fs.rename(temporario, ARQUIVO);
+  if(githubBackup.status().configurado){
+    try{ await githubBackup.sincronizar(base); }
+    catch(e){ console.error('Backup GitHub não realizado:', e.message); }
+  }
 }
 
 async function inicializar(){
@@ -150,4 +155,14 @@ async function excluirTurma(id, confirmarNome){
   return resumo;
 }
 
-module.exports = {listarTurmas, criarTurma, renomearTurma, excluirTurma, listarAvaliacoes, upsertAvaliacao, removerAvaliacao, limparAvaliacoes};
+async function sincronizarBackupGitHub(){
+  const status = githubBackup.status();
+  if(!status.configurado) throw new Error('Configure GITHUB_DATA_OWNER, GITHUB_DATA_REPO e GITHUB_DATA_TOKEN no servidor.');
+  return githubBackup.sincronizar(await ler());
+}
+
+function statusBackupGitHub(){
+  return githubBackup.status();
+}
+
+module.exports = {listarTurmas, criarTurma, renomearTurma, excluirTurma, listarAvaliacoes, upsertAvaliacao, removerAvaliacao, limparAvaliacoes, sincronizarBackupGitHub, statusBackupGitHub};

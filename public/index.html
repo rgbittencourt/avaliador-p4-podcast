@@ -372,9 +372,11 @@
         <div class="toolbar">
           <button class="btn secondary" onclick="exportarJSON()">Exportar turma (JSON)</button>
           <button class="btn secondary" onclick="exportarCSV()">Exportar turma (CSV)</button>
+          <button class="btn secondary" id="btnBackupGitHub" onclick="sincronizarGitHub()">Salvar cópia no GitHub</button>
           <button class="btn" onclick="gerarRelatorioExecutivo()">📊 Gerar relatório executivo</button>
           <button class="btn danger" onclick="limparTurma()">Limpar turma</button>
         </div>
+        <div id="githubBackupStatus" class="hint" style="margin-top:4px;"></div>
         <div style="margin-top:10px;border-top:1px dashed var(--cinza-borda);padding-top:10px;">
           <label style="margin-top:0;">Importar avaliação(ões) pronta(s) (JSON)</label>
           <div class="hint">Use isto para trazer para a turma uma avaliação feita fora da ferramenta (por exemplo, uma análise feita em conversa com IA). Aceita um arquivo com um aluno ou com vários.</div>

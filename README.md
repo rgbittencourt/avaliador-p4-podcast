@@ -1,6 +1,6 @@
 # Avaliador P4 · Podcast (TEDPRO/IFSC)
 
-App local (roda no seu computador) para avaliar a atividade P4 (produção de
+Aplicativo web instalável (PWA) para computador, tablet e celular, destinado a avaliar a atividade P4 (produção de
 podcast) do TEDPRO contra a rubrica oficial: importa o relatório em PDF (lendo
 até o hyperlink real do podcast, não só o texto), toca/analisa o áudio,
 sugere pontuação por IA (com sua própria chave da OpenAI), transcreve o
@@ -54,11 +54,14 @@ pontuação por IA e a transcrição automática exigem a chave.
   e o próprio texto do feedback são editáveis. Enquanto o feedback não tiver
   edição manual, ele acompanha automaticamente as alterações da avaliação;
   depois de editado, o texto é preservado até você confirmar a atualização.
-- **Mantém várias turmas nomeadas** salvas localmente em `data/turmas.json`.
+- **Mantém várias turmas nomeadas** salvas no PostgreSQL/Neon em produção ou em `data/turmas.json` no uso local.
   Cada turma pode ser reaberta, renomeada e receber avaliações novas ou
   alteradas, inclusive depois da emissão de um relatório. A exclusão integral
   exige digitar exatamente o nome da turma e remove permanentemente todos os
   dados e avaliações vinculados a ela.
+- **Mantém uma cópia privada no GitHub** quando as variáveis `GITHUB_DATA_*`
+  estão configuradas no servidor. Cada alteração atualiza `dados/turmas.json`
+  no repositório privado; também há um botão para sincronização manual.
 - **Gera relatório executivo sob demanda** com indicadores, gráficos de
   desempenho, distribuição das notas, alertas recorrentes, insights,
   recomendações pedagógicas e resultados individuais. O relatório abre em
@@ -94,8 +97,10 @@ pontuação por IA e a transcrição automática exigem a chave.
   não fornece o áudio completo para download/transcrição; o aplicativo não
   tenta contornar essa restrição. Sem arquivo ou transcrição, a IA deixa o
   critério de produção sem sugestão para o professor decidir após ouvir.
-- As turmas ficam em `data/turmas.json`, no computador local ou no volume
-  persistente configurado na hospedagem.
+- As turmas ficam no PostgreSQL/Neon em produção. O backup opcional no GitHub
+  deve ficar em um repositório **privado**, pois contém dados pessoais e
+  avaliações protegidos pela LGPD. O token do GitHub permanece somente no
+  servidor e nunca é enviado ao navegador.
 
 ## Continuando no Codex
 
@@ -119,7 +124,8 @@ navegadores. Em produção, o servidor exige `APP_PASSWORD` e protege a interfac
 com autenticação. Consulte [DEPLOY.md](DEPLOY.md) para variáveis, volume e backup.
 
 A configuração de nuvem está pronta em `render.yaml`. Ela cria um serviço web
-protegido por senha e mantém as turmas em um disco persistente.
+protegido por senha, usa o Neon como base principal e pode espelhar um JSON no
+repositório privado `rgbittencourt/avaliador-podcast-dados`.
 
 ## Identidade visual e instalação
 

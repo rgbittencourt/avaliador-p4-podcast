@@ -1064,8 +1064,36 @@ async function carregarTurma(){
   verificarAvaliacaoExistente();
 }
 
+async function carregarStatusGitHub(){
+  const el=document.getElementById('githubBackupStatus');
+  const btn=document.getElementById('btnBackupGitHub');
+  if(!el || !btn) return;
+  try{
+    const resp=await fetch('/api/backup/github');
+    const status=await respostaJson(resp, 'consulta do backup');
+    btn.disabled=!status.configurado;
+    if(!status.configurado){ el.textContent='Backup privado do GitHub ainda não configurado no servidor.'; return; }
+    const quando=status.ultimaSincronizacao ? new Date(status.ultimaSincronizacao).toLocaleString('pt-BR') : 'ainda não realizado';
+    el.innerHTML=status.ultimoErro
+      ? `<span style="color:var(--vermelho);">Última tentativa falhou: ${escaparHtml(status.ultimoErro)}</span>`
+      : `<span style="color:var(--verde);">Cópia privada no GitHub: ${quando}.</span>`;
+  }catch(e){ el.textContent=e.message; }
+}
+
+async function sincronizarGitHub(){
+  const el=document.getElementById('githubBackupStatus');
+  const btn=document.getElementById('btnBackupGitHub');
+  btn.disabled=true; el.textContent='Salvando cópia privada no GitHub...';
+  try{
+    const resp=await fetch('/api/backup/github',{method:'POST'});
+    const status=await respostaJson(resp, 'backup no GitHub');
+    el.innerHTML=`<span style="color:var(--verde);">✔ Cópia atualizada em ${new Date(status.ultimaSincronizacao).toLocaleString('pt-BR')}.</span>`;
+  }catch(e){ el.innerHTML=`<span style="color:var(--vermelho);">${escaparHtml(e.message)}</span>`; }
+  finally{ btn.disabled=false; }
+}
+
 async function initApp(){
-  try{ await carregarListaTurmas(); await carregarTurma(); }
+  try{ await carregarListaTurmas(); await carregarTurma(); await carregarStatusGitHub(); }
   catch(e){ console.error(e); mostrarStatusTurma(e.message, 'erro'); }
 }
 

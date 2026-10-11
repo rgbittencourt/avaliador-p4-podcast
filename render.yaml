@@ -21,3 +21,13 @@ services:
         sync: false
       - key: OPENAI_MODEL
         value: gpt-4o-mini
+      - key: GITHUB_DATA_OWNER
+        value: rgbittencourt
+      - key: GITHUB_DATA_REPO
+        value: avaliador-podcast-dados
+      - key: GITHUB_DATA_BRANCH
+        value: main
+      - key: GITHUB_DATA_PATH
+        value: dados/turmas.json
+      - key: GITHUB_DATA_TOKEN
+        sync: false
