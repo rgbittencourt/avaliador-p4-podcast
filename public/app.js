@@ -988,6 +988,10 @@ async function transcreverAutomaticamente(){
   const input = document.getElementById('arquivoLocal');
   const file = input.files && input.files[0];
   const link = document.getElementById('linkPodcast').value.trim();
+  if(location.protocol==='file:'){
+    status.innerHTML = '<span style="color:var(--vermelho);"><strong>O áudio foi selecionado corretamente, mas o aplicativo foi aberto diretamente como arquivo do computador.</strong> A transcrição precisa do servidor. Abra a <a href="https://avaliador-podcast.onrender.com/" target="_blank" rel="noopener">versão online do Avaliador P4</a>, importe o PDF e selecione novamente este mesmo áudio.</span>';
+    return;
+  }
   if(!file && /open\.spotify\.com\//i.test(link)){
     status.innerHTML = '<span style="color:var(--amarelo);">O Spotify não fornece o áudio completo para transcrição. Abra o episódio, ouça-o e avalie manualmente a produção. Se o aluno também enviou um Google Drive público, substitua temporariamente o link por ele para transcrever.</span>';
     return;
