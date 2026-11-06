@@ -156,6 +156,19 @@
   .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
   .muted{color:var(--texto-hint);font-size:0.78rem;}
   .footer-note{font-size:0.75rem;color:var(--texto-hint);text-align:center;padding:18px 0;}
+  .hidden{display:none!important;}
+  .pdf-preview-actions{margin-top:12px;padding:10px;border:1px solid var(--azul-header);border-radius:8px;background:color-mix(in srgb,var(--azul-header) 7%,var(--superficie));}
+  .page-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px;}
+  .page-thumb{border:1px solid var(--cinza-borda);border-radius:8px;background:var(--superficie);padding:6px;cursor:pointer;text-align:left;color:var(--texto);font:inherit;}
+  .page-thumb:hover,.page-thumb:focus-visible{border-color:var(--azul-header);box-shadow:0 0 0 2px color-mix(in srgb,var(--azul-header) 18%,transparent);outline:none;}
+  .page-thumb img{display:block;width:100%;height:170px;object-fit:contain;background:#eef2f3;}
+  .page-thumb span{display:block;font-size:.73rem;font-weight:700;margin-top:5px;}
+  .pdf-modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;padding:20px;overflow:auto;}
+  .pdf-modal-bar{position:sticky;top:0;width:min(1100px,100%);display:flex;justify-content:space-between;align-items:center;background:#172b36;color:#fff;padding:10px 14px;border-radius:8px 8px 0 0;z-index:1;}
+  .pdf-modal img{max-width:min(1100px,100%);height:auto;background:#fff;box-shadow:0 8px 30px #0008;}
+  .pdf-modal button{background:#fff;color:#172b36;border:0;border-radius:6px;padding:7px 11px;font-weight:800;cursor:pointer;}
+  @media (max-width:600px){.page-gallery{grid-template-columns:repeat(2,minmax(0,1fr));}.page-thumb img{height:145px;}.pdf-modal{padding:8px;}.pdf-modal-bar{border-radius:6px 6px 0 0;}}
+  @media print{.pdf-preview-actions,.page-gallery,.pdf-modal{display:none!important;}}
 </style>
 </head>
 <body>
@@ -179,6 +192,11 @@
         <div class="hint">Selecione o PDF do relatório preenchido pelo aluno (modelo P4). Os campos abaixo serão preenchidos automaticamente a partir do texto do PDF — revise sempre antes de avaliar, pois a extração é automática e pode falhar em relatórios com formatação fora do padrão.</div>
         <input type="file" id="arquivoRelatorioPdf" accept="application/pdf" style="margin-top:8px;">
         <div id="importStatus" class="hint" style="margin-top:6px;"></div>
+        <div id="pdfPreviewActions" class="pdf-preview-actions hidden">
+          <div class="hint">Confira visualmente o relatório. Clique em qualquer miniatura para abrir a página ampliada.</div>
+          <button type="button" class="btn secondary" id="togglePdfPages">Ocultar páginas</button>
+        </div>
+        <div id="pdfPageGallery" class="page-gallery hidden" aria-label="Miniaturas das páginas do relatório"></div>
       </div>
 
       <div class="card">
@@ -432,6 +450,10 @@
   pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(blob);
 })();
 </script>
+<div id="pdfPageModal" class="pdf-modal hidden" role="dialog" aria-modal="true" aria-label="Visualização da página do relatório">
+  <div class="pdf-modal-bar"><strong id="pdfModalTitle">Página do relatório</strong><button type="button" id="closePdfModal">Fechar</button></div>
+  <img id="pdfModalImage" alt="Página ampliada do relatório">
+</div>
 <script src="app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {

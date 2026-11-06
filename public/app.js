@@ -71,6 +71,7 @@ function urlHttpSegura(valor){
 }
 
 let spotifyApiPromise = null;
+let pdfPagePreviews = [];
 function obterSpotifyIframeApi(){
   if(spotifyApiPromise) return spotifyApiPromise;
   spotifyApiPromise = new Promise((resolve, reject)=>{
@@ -182,6 +183,50 @@ async function extrairTextoPdf(pdf){
     textoCompleto += linhas.join('\n') + '\n\n';
   }
   return textoCompleto;
+}
+
+async function gerarMiniaturasPdf(pdf){
+  pdfPagePreviews = [];
+  for(let numero=1; numero<=pdf.numPages; numero++){
+    const pagina = await pdf.getPage(numero);
+    const viewport = pagina.getViewport({scale:1.25});
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    await pagina.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+    pdfPagePreviews.push(canvas.toDataURL('image/jpeg',0.84));
+  }
+  renderizarGaleriaPdf();
+}
+
+function renderizarGaleriaPdf(){
+  const galeria=document.getElementById('pdfPageGallery');
+  galeria.innerHTML=pdfPagePreviews.map((src,i)=>`<button type="button" class="page-thumb" data-pdf-page="${i}"><img src="${src}" alt="Miniatura da página ${i+1}"><span>Página ${i+1} · ampliar</span></button>`).join('');
+  document.getElementById('pdfPreviewActions').classList.toggle('hidden',!pdfPagePreviews.length);
+  galeria.classList.toggle('hidden',!pdfPagePreviews.length);
+  document.getElementById('togglePdfPages').textContent='Ocultar páginas';
+}
+
+function abrirPaginaPdf(indice){
+  if(!pdfPagePreviews[indice]) return;
+  document.getElementById('pdfModalTitle').textContent=`Página ${indice+1} do relatório`;
+  document.getElementById('pdfModalImage').src=pdfPagePreviews[indice];
+  document.getElementById('pdfPageModal').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+}
+
+function fecharPaginaPdf(){
+  document.getElementById('pdfPageModal').classList.add('hidden');
+  document.getElementById('pdfModalImage').src='';
+  document.body.style.overflow='';
+}
+
+function limparVisualizacaoPdf(){
+  pdfPagePreviews=[];
+  document.getElementById('pdfPageGallery').innerHTML='';
+  document.getElementById('pdfPageGallery').classList.add('hidden');
+  document.getElementById('pdfPreviewActions').classList.add('hidden');
+  fecharPaginaPdf();
 }
 
 function extrairCampos(textoCompleto){
@@ -307,6 +352,7 @@ document.getElementById('arquivoRelatorioPdf').addEventListener('change', async 
     return;
   }
   status.textContent = 'Lendo PDF...';
+  limparVisualizacaoPdf();
   try{
     // Cada PDF inicia uma avaliação independente. Nunca reutilizar áudio,
     // transcrição, duração ou métricas do aluno anterior.
@@ -324,6 +370,8 @@ document.getElementById('arquivoRelatorioPdf').addEventListener('change', async 
     // diretamente (file://) em vez de servido por um servidor web.
     const pdf = await pdfjsLib.getDocument({data: buf, disableWorker: true}).promise;
     const texto = await extrairTextoPdf(pdf);
+    status.textContent = `Texto extraído. Gerando miniaturas de ${pdf.numPages} página(s)...`;
+    await gerarMiniaturasPdf(pdf);
     const campos = extrairCampos(texto);
     const linksAnotados = await extrairLinksAnotados(pdf);
     const linkReal = escolherLinkDoPodcast(linksAnotados);
@@ -346,13 +394,30 @@ document.getElementById('arquivoRelatorioPdf').addEventListener('change', async 
 
     verificarAvaliacaoExistente();
     atualizarNota();
-    status.innerHTML = '<span style="color:var(--verde);">✔ Campos importados.</span> Revise os campos abaixo (a extração automática pode não ser perfeita, especialmente a marcação de uso de IA)'
+    status.innerHTML = `<span style="color:var(--verde);">✔ Campos importados e ${pdf.numPages} página(s) disponíveis para conferência.</span> Revise os campos abaixo (a extração automática pode não ser perfeita, especialmente a marcação de uso de IA)`
       + (linkReal ? ' — o link do podcast veio do hiperlink real do PDF.' : (campos.linkPodcast ? ' — não achei um hiperlink clicável no PDF; o link do podcast foi reconstruído a partir do texto, confira com atenção.' : '.'))
       + ' Se tiver o arquivo do podcast, carregue-o na seção "Ou carregar um arquivo local" logo abaixo — depois é só clicar em "🚀 Avaliar automaticamente" no passo 3.';
   } catch(err){
     console.error(err);
     status.innerHTML = `<span style="color:var(--vermelho);">Não foi possível ler este PDF automaticamente (${err.message}). Preencha os campos manualmente abaixo.</span>`;
   }
+});
+
+document.getElementById('togglePdfPages').addEventListener('click',()=>{
+  const galeria=document.getElementById('pdfPageGallery');
+  galeria.classList.toggle('hidden');
+  document.getElementById('togglePdfPages').textContent=galeria.classList.contains('hidden')?'Ver páginas':'Ocultar páginas';
+});
+document.getElementById('pdfPageGallery').addEventListener('click',e=>{
+  const botao=e.target.closest('[data-pdf-page]');
+  if(botao) abrirPaginaPdf(Number(botao.dataset.pdfPage));
+});
+document.getElementById('closePdfModal').addEventListener('click',fecharPaginaPdf);
+document.getElementById('pdfPageModal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('pdfPageModal')) fecharPaginaPdf();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!document.getElementById('pdfPageModal').classList.contains('hidden')) fecharPaginaPdf();
 });
 
 // ---------- Montagem da rubrica na tela ----------
@@ -1259,6 +1324,7 @@ function novaAvaliacao(){
   ['arquivoRelatorioPdf','arquivoLocal'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
+  limparVisualizacaoPdf();
   document.getElementById('orientadorIncorretoChk').checked=false;
   document.getElementById('orientadorCorretoWrap').style.display='none';
   document.getElementById('iaUsada').value='nao';
