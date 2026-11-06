@@ -1,6 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { montarPrompt, montarPromptCoerencia, limparSaidaCoerencia, pontoMaisProximo, pontuarProducaoPorEvidencia } = require('../server');
+const { montarPrompt, montarPromptCoerencia, limparSaidaCoerencia, pontoMaisProximo, pontuarProducaoPorEvidencia, hostDownloadDrivePermitido } = require('../server');
+
+test('aceita os domínios oficiais usados no download do Google Drive', () => {
+  assert.equal(hostDownloadDrivePermitido('drive.google.com'), true);
+  assert.equal(hostDownloadDrivePermitido('drive.usercontent.google.com'), true);
+  assert.equal(hostDownloadDrivePermitido('doc-00-00-sheets.googleusercontent.com'), true);
+  assert.equal(hostDownloadDrivePermitido('drive.usercontent.google.com.exemplo.com'), false);
+  assert.equal(hostDownloadDrivePermitido('exemplo.com'), false);
+});
 
 test('normaliza pontuações para os valores oficiais da rubrica', () => {
   assert.equal(pontoMaisProximo('adequacao', 0.6), 0.5);

@@ -1024,6 +1024,8 @@ async function transcreverAutomaticamente(){
       status.innerHTML = '<span style="color:var(--vermelho);">Chave da API da OpenAI ausente ou inválida — confira o arquivo .env do servidor.</span>';
     } else if(e.status===413){
       status.innerHTML = '<span style="color:var(--vermelho);">Arquivo grande demais para transcrever de uma vez. Tente um arquivo menor.</span>';
+    } else if(e.message==='Failed to fetch'){
+      status.innerHTML = '<span style="color:var(--vermelho);">A conexão com o servidor foi interrompida durante a transcrição. Aguarde alguns segundos e tente novamente; o áudio e o formulário permanecem nesta página.</span>';
     } else {
       status.innerHTML = '<span style="color:var(--vermelho);">Não foi possível transcrever (' + e.message + ').</span>';
     }

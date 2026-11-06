@@ -348,7 +348,7 @@ async function baixarComLimite(url, limite){
   const resp = await fetch(url, {redirect:'follow'});
   if(!resp.ok) throw Object.assign(new Error(`O Google Drive recusou o acesso (${resp.status}).`), {status:400});
   const hostFinal = new URL(resp.url).hostname;
-  if(!(hostFinal === 'drive.google.com' || hostFinal.endsWith('.googleusercontent.com'))){
+  if(!hostDownloadDrivePermitido(hostFinal)){
     throw Object.assign(new Error('O redirecionamento do arquivo não foi reconhecido como Google Drive.'), {status:400});
   }
   const tamanho = Number(resp.headers.get('content-length') || 0);
@@ -365,6 +365,15 @@ async function baixarComLimite(url, limite){
   const tipo = resp.headers.get('content-type') || '';
   if(tipo.includes('text/html')) throw Object.assign(new Error('O link não está público ou aponta para uma página, não para o arquivo de áudio.'), {status:400});
   return {buffer:Buffer.concat(partes), tipo};
+}
+
+function hostDownloadDrivePermitido(hostname){
+  const host=String(hostname||'').toLowerCase();
+  return host==='drive.google.com'
+    || host==='drive.usercontent.google.com'
+    || host==='usercontent.google.com'
+    || host.endsWith('.googleusercontent.com')
+    || host.endsWith('.usercontent.google.com');
 }
 
 app.post('/api/transcrever-link', async (req, res) => {
@@ -398,4 +407,4 @@ if(require.main === module){
   });
 }
 
-module.exports = { app, montarPrompt, montarPromptCoerencia, limparSaidaCoerencia, pontoMaisProximo, pontuarProducaoPorEvidencia };
+module.exports = { app, montarPrompt, montarPromptCoerencia, limparSaidaCoerencia, pontoMaisProximo, pontuarProducaoPorEvidencia, hostDownloadDrivePermitido };
